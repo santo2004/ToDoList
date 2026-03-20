@@ -2,5 +2,6 @@
 {
     public class ForgotPassReqDto
     {
+        public string Email { get; set; } = null!;
     }
 }
