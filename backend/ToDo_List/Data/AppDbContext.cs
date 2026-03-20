@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ToDo_List.Entities;
 
 namespace ToDo_List.Data
 {
@@ -15,9 +14,7 @@ namespace ToDo_List.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // =========================
             // USER CONFIG
-            // =========================
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.UserId);
@@ -27,7 +24,7 @@ namespace ToDo_List.Data
                       .HasMaxLength(255);
 
                 entity.HasIndex(u => u.Email)
-                      .IsUnique(); // 🔥 IMPORTANT
+                      .IsUnique(); 
 
                 entity.Property(u => u.PasswordHash)
                       .IsRequired();
@@ -43,10 +40,8 @@ namespace ToDo_List.Data
                       .HasForeignKey(t => t.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
-
-            // =========================
+            
             // TASK CONFIG
-            // =========================
             modelBuilder.Entity<TaskItem>(entity =>
             {
                 entity.HasKey(t => t.TaskId);
@@ -71,15 +66,16 @@ namespace ToDo_List.Data
                       .HasDefaultValueSql("GETDATE()");
 
                 entity.Property(t => t.UpdatedAt)
-                      .IsRequired();
+                      .IsRequired(false); 
+
+                entity.Property(t => t.CompletedAt)
+                      .IsRequired(false); 
 
                 entity.Property(t => t.IsDeleted)
                       .HasDefaultValue(false);
             });
 
-            // =========================
             // GLOBAL SOFT DELETE FILTER
-            // =========================
             modelBuilder.Entity<User>()
                 .HasQueryFilter(u => !u.IsDeleted);
 
