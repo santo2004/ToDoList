@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ToDo_List.DTOs.Auth;
+using ToDo_List.Responses;
 using ToDo_List.Services.Interfaces;
 
 namespace ToDo_List.Controllers
@@ -20,10 +21,9 @@ namespace ToDo_List.Controllers
         {
             var result = await _authService.Register(dto);
 
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return result.Success
+                ? Ok(new ApiResponse<object> { Success = true, Message = result.Message })
+                : BadRequest(new ApiResponse<object> { Success = false, Message = result.Message });
         }
 
         [HttpPost("login")]
@@ -31,10 +31,9 @@ namespace ToDo_List.Controllers
         {
             var result = await _authService.Login(dto);
 
-            if (!result.Success)
-                return Unauthorized(result);
-
-            return Ok(result);
+            return result.Success
+                ? Ok(new ApiResponse<string> { Success = true, Message = result.Message, Data = result.Token })
+                : Unauthorized(new ApiResponse<object> { Success = false, Message = result.Message });
         }
 
         [HttpPost("forgot-password")]
@@ -42,10 +41,9 @@ namespace ToDo_List.Controllers
         {
             var result = await _authService.GenerateResetToken(dto);
 
-            if (!result.Success)
-                return NotFound(result);
-
-            return Ok(result);
+            return result.Success
+                ? Ok(new ApiResponse<object>{ Success = true, Message = result.Message, Data = result.Token})
+                : NotFound(new ApiResponse<object> { Success = false, Message = result.Message });
         }
 
         [HttpPost("reset-password")]
@@ -53,10 +51,9 @@ namespace ToDo_List.Controllers
         {
             var result = await _authService.ResetPassword(dto);
 
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return result.Success
+                ? Ok(new ApiResponse<object> { Success = true, Message = result.Message })
+                : BadRequest(new ApiResponse<object> { Success = false, Message = result.Message });
         }
     }
 }

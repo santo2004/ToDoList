@@ -1,14 +1,26 @@
-﻿using ToDo_List.Enums;
+﻿using System.ComponentModel.DataAnnotations;
+using ToDo_List.Enums;
 
 namespace ToDo_List.DTOs.Task
 {
     public class UpdateTaskReqDto
     {
+        [Required]
+        [MaxLength(200)]
         public string Title { get; set; } = null!;
+
+        [Required]
+        [MaxLength(500)]
         public string Description { get; set; } = null!;
+
+        [Required]
         public TaskPriority Priority { get; set; }
-        public ToDo_List.Enums.TaskStatus Status { get; set; }
+
+        [Required]
+        public Enums.TaskStatus Status { get; set; }
+
         public TaskType? Type { get; set; }
+
         public DateTime? Deadline { get; set; }
     }
 }

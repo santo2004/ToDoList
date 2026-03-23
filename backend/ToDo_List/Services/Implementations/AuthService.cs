@@ -38,8 +38,19 @@ namespace ToDo_List.Services.Implementations
                 IsDeleted = false
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return new AuthResDto
+                {
+                    Success = false,
+                    Message = ex.InnerException?.Message ?? "Database error"
+                };
+            }
 
             return new AuthResDto
             {
@@ -72,7 +83,9 @@ namespace ToDo_List.Services.Implementations
             if (user == null)
                 return new AuthResDto { Success = false, Message = "User not found" };
 
-            user.ResetToken = Guid.NewGuid().ToString();
+            var token = Guid.NewGuid().ToString();
+
+            user.ResetToken = token;
             user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
 
             await _context.SaveChangesAsync();
@@ -80,7 +93,8 @@ namespace ToDo_List.Services.Implementations
             return new AuthResDto
             {
                 Success = true,
-                Message = "Reset token generated"
+                Message = "Reset token generated",
+                Token = token   // ✅ THIS IS THE FIX
             };
         }
 
@@ -111,19 +125,33 @@ namespace ToDo_List.Services.Implementations
         private string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
+
+            var keyString = jwtSettings["Key"];
+            var issuer = jwtSettings["Issuer"];
+            var audience = jwtSettings["Audience"];
+
+            if (string.IsNullOrEmpty(keyString))
+                throw new Exception("JWT Key is missing in configuration");
+
+            if (string.IsNullOrEmpty(issuer))
+                throw new Exception("JWT Issuer is missing in configuration");
+
+            if (string.IsNullOrEmpty(audience))
+                throw new Exception("JWT Audience is missing in configuration");
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Email, user.Email)
-            };
+        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+        new Claim(ClaimTypes.Email, user.Email)
+    };
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
+                issuer: issuer,
+                audience: audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: creds
