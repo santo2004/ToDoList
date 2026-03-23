@@ -109,5 +109,25 @@ namespace ToDo_List.Controllers
                 Message = "Status updated"
             });
         }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchTasks([FromQuery] string query)
+        {
+            var tasks = await _taskService.SearchTasks(GetUserId(), query);
+
+            if (tasks == null || !tasks.Any())
+                return NotFound(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "No tasks found"
+                });
+
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Tasks found",
+                Data = tasks
+            });
+        }
     }
 }

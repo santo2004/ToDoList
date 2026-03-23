@@ -139,5 +139,31 @@ namespace ToDo_List.Services.Implementations
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<IEnumerable<TaskResDto>> SearchTasks(int userId, string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return new List<TaskResDto>();
+
+            var tasks = await _context.Tasks
+                .Where(t => t.UserId == userId &&
+                           (t.Title.Contains(query) || t.Description.Contains(query)))
+                .OrderByDescending(t => t.Priority)
+                .ThenBy(t => t.Status)
+                .ThenBy(t => t.Deadline)
+                .ToListAsync();
+
+            return tasks.Select(t => new TaskResDto
+            {
+                TaskId = t.TaskId,
+                Title = t.Title,
+                Description = t.Description,
+                Priority = t.Priority,
+                Status = t.Status,
+                Type = t.Type,
+                Deadline = t.Deadline,
+                CreatedAt = t.CreatedAt
+            });
+        }
     }
 }
