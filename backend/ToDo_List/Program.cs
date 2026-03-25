@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ToDo_List.Middleware;
 using System.Text.Json.Serialization;
+using ToDo_List.Auth;
 
 namespace ToDo_List
 {
@@ -61,6 +62,8 @@ namespace ToDo_List
             // Register application services
             builder.Services.AddScoped<ITaskService, TaskService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+            builder.Services.AddScoped<IJwtService, JwtService>();
 
             // Configure JWT authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");

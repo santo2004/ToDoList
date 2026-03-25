@@ -147,7 +147,8 @@ namespace ToDo_List.Services.Implementations
 
             var tasks = await _context.Tasks
                 .Where(t => t.UserId == userId &&
-                           (t.Title.Contains(query) || t.Description.Contains(query)))
+                    (EF.Functions.Like(t.Title, $"%{query}%") ||
+                     EF.Functions.Like(t.Description, $"%{query}%")))
                 .OrderByDescending(t => t.Priority)
                 .ThenBy(t => t.Status)
                 .ThenBy(t => t.Deadline)

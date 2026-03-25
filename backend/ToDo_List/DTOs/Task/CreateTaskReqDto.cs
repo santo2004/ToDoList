@@ -15,12 +15,10 @@ namespace ToDo_List.DTOs.Task
 
         [Required]
         public TaskPriority Priority { get; set; }
-
+        
         [Required]
         public Enums.TaskStatus Status { get; set; }
-
         public TaskType? Type { get; set; }
-
         public DateTime? Deadline { get; set; }
     }
 }

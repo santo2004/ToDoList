@@ -1,9 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using ToDo_List.Auth;
 using ToDo_List.Data;
 using ToDo_List.DTOs.Auth;
 using ToDo_List.Services.Interfaces;
@@ -13,12 +9,14 @@ namespace ToDo_List.Services.Implementations
     public class AuthService : IAuthService
     {
         private readonly AppDbContext _context;
-        private readonly IConfiguration _configuration;
+        private readonly IPasswordHasher _passwordHasher;
+        private readonly IJwtService _jwtService;
 
-        public AuthService(AppDbContext context, IConfiguration configuration)
-        {
+        public AuthService( AppDbContext context, IPasswordHasher passwordHasher, IJwtService jwtService)
+        { 
             _context = context;
-            _configuration = configuration;
+            _passwordHasher = passwordHasher;
+            _jwtService = jwtService;
         }
 
         public async Task<AuthResDto> Register(RegisterReqDto dto)
@@ -33,7 +31,7 @@ namespace ToDo_List.Services.Implementations
             var user = new User
             {
                 Email = dto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                PasswordHash = _passwordHasher.Hash(dto.Password),
                 CreatedAt = DateTime.UtcNow,
                 IsDeleted = false
             };
@@ -64,14 +62,14 @@ namespace ToDo_List.Services.Implementations
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            if (user == null || !_passwordHasher.Verify(dto.Password, user.PasswordHash))
                 return new AuthResDto { Success = false, Message = "Invalid credentials" };
 
             return new AuthResDto
             {
                 Success = true,
                 Message = "Login successful",
-                Token = GenerateJwtToken(user)
+                Token = _jwtService.GenerateToken(user)
             };
         }
 
@@ -94,7 +92,7 @@ namespace ToDo_List.Services.Implementations
             {
                 Success = true,
                 Message = "Reset token generated",
-                Token = token   // ✅ THIS IS THE FIX
+                Token = token   
             };
         }
 
@@ -120,44 +118,6 @@ namespace ToDo_List.Services.Implementations
                 Success = true,
                 Message = "Password reset successful"
             };
-        }
-
-        private string GenerateJwtToken(User user)
-        {
-            var jwtSettings = _configuration.GetSection("Jwt");
-
-            var keyString = jwtSettings["Key"];
-            var issuer = jwtSettings["Issuer"];
-            var audience = jwtSettings["Audience"];
-
-            if (string.IsNullOrEmpty(keyString))
-                throw new Exception("JWT Key is missing in configuration");
-
-            if (string.IsNullOrEmpty(issuer))
-                throw new Exception("JWT Issuer is missing in configuration");
-
-            if (string.IsNullOrEmpty(audience))
-                throw new Exception("JWT Audience is missing in configuration");
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
-
-            var claims = new[]
-            {
-        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-        new Claim(ClaimTypes.Email, user.Email)
-    };
-
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

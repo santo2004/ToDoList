@@ -116,11 +116,7 @@ namespace ToDo_List.Controllers
             var tasks = await _taskService.SearchTasks(GetUserId(), query);
 
             if (tasks == null || !tasks.Any())
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "No tasks found"
-                });
+                return NotFound(new ApiResponse<object> { Success = false, Message = "No tasks found" });
 
             return Ok(new ApiResponse<object>
             {
